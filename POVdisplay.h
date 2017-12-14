@@ -1,57 +1,56 @@
-#ifndef display_h
-#define display_h
+#include <Arduino.h>
 
-#define PINRCK   00  //
-#define PINSRCK  00  //
-#define PINENA   00  //
-#define PINDIN   00  //
-
-#define PINMOTOR-A1 00
-#define PINMOTOR-A2 00 
-#define PINMOTOR-B1 00 
-#define PINMOTOR-B2 00
-
-#define FONT_W     5  // Breite der Zeichen in Pixel
+#pragma once
 
 
-#include <Max72xxPanel.h>       // https://github.com/markruys/arduino-Max72xxPanel.git
+#define CCW   1
+#define CW   -1
+#define STEPS_PER_ROTATION 4096  // steps needed for 360°
 
-class LEDmatrix {
+
+extern "C"
+{
+  #include "user_interface.h"
+}
+
+
+class PovDisplay {
   public:
-    LEDmatrix( uint8_t spacer);
-    void loop();
-    void setSpeed(uint8_t speedval);
-    void setMode(uint8_t mode, const char *content);
-
+    PovDisplay( uint8_t  LedData, uint8_t  LedClk, uint8_t  LedEna, uint8_t  LedLatch, 
+                uint8_t  M_A1, uint8_t  M_A2, uint8_t  M_B1, uint8_t  M_B2, 
+                uint8_t steps_per_pixel, uint8_t highlighted_steps,  uint8_t column_offset, 
+                float rpm, uint8_t m_direction);
+    static PovDisplay * mySelf;
+    static os_timer_t myTimer;
+    void _start_rotating();
+    void _stop_rotating();
+    void _set_rotation(uint8_t dir);
+    void _set_highlighted_steps(uint8_t stepcount);
+    void _set_speed(float rpm);
+    bool _set_next_column (uint8_t value);
+    void _debug_me();
+ 
   private:
-    uint8_t   _pinRCK;
-    uint8_t   _pinSRCK;
-    uint8_t   _pinENA;
-    uint8_t   _pinDIN;
-    uint8_t   _pinMOTOR-A1;
-    uint8_t   _pinMOTOR-A2;
-    uint8_t   _pinMOTOR-B1;
-    uint8_t   _pinMOTOR-B2;
-    uint8_t   _width;     // width of character incl. spacers
-    uint8_t   _spacer;    // distance between characters
-    uint16_t  _wait;      // time to wait between single frames, calculated from speed
-    uint32_t  _lastRun;
-    int16_t   _currPos;
-    uint8_t   _contentMode;
-    uint16_t  _contentPt;
-    char      _content[200];
-    File      _graphFile; 
-    int16_t   _nextGraphPos;
-    
-    void      _loopDateTime();
-    void      _loopTime();
-    void      _loopText(boolean doLoop);
-    void      _loopGraphics();
-    void      _loopIP();
-    void      _drawLine(int16_t x, uint8_t matrixElem, uint8_t color, uint8_t bg);
-
+    const uint8_t _stepValues[8] = {0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001, 0b1001, 0b1000};
+    uint8_t  _pinLedData, _pinLedClk, _pinLedEna, _pinLedLatch; // shift register for LEDs
+    uint8_t  _motorPins[4];                                     // pins for two stepper motor coils
+    uint8_t  _steps_per_pixel, _highlighted_steps;              // steps per pixel, thereof number of steps with LED on
+    uint8_t  _column_offset;                                    // offset between the two columns of 4 LEDs each in steps
+    uint16_t _step_delay;                                       // delay between each step (calculated from rpm)
+    uint8_t  _motor_direction;                                  // 1, -1 : cw, ccw
+    uint8_t  _MotorStepState;
+    uint8_t  _currPixelStep;
+    uint8_t  _currBackStep;
+    uint8_t  _ringbuffer[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};           // buffer for outputting data
+    volatile uint8_t  _bufstart=0;                              // pointer to buffer start
+    volatile uint8_t  _backstart;                               // pointer to buffer start for backpixel
+    volatile uint8_t  _bufend=1;                                // pointer to buffer end
+    volatile bool _bufferfull=false;
+    uint8_t  _bufsize;
+    static void _callback_helper(void *pArg);
+    void _do_next_step();                                   // function for ISR timer
+      
 };
 
+//#endif
 
-
-#endif //display_h

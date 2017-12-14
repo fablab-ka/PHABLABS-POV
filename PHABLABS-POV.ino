@@ -1,21 +1,4 @@
 /****************************************************************************************************
-*  LED-Matrix  1.1   
-*  Wolfgang Kraft, Fablab Karlsruhe 2017                                                            *
-*  Modul um eine Reihe LED-Matrizen (8x8) mittels ESP8266 als Display zu verwenden                  *
-*  Erste Features:                                                                                  *  
-*    - ständige Erreichbarkeit des Webservers zur Steuerung der Applikation                         *
-*      und Konfiguration des WiFi-Teils (AP oder STA Modus)                                         *
-*    - Anzeige der aktuellen IP-Adresse nach Start                                                  *
-*    - integrierter HTML Editor für SPIFFS-Dateien auch ohne Internet-Verbindung                    *
-*  ToDos:                                                                                           *
-*    - Refactoring, Zusammenfassen der Webserverfunktionen in eine eigene Bibliothek als            *
-*      Webapplication-Basisklasse                                                                   *
-*      * mehrstufige Benutzerauthentifizierung und -verwaltung (z.B. Konfiguration und Anwendung    *
-*        der Applikation                                                                            *
-*      * Ausbau der IP-Konfiguration um WPS, feste IP-Adressen, DHCP-Ranges, Nameserver,            *
-*        Mailgateway ...                                                                            *
-*      * Einsatz von https                                                                          *
-*    - Durchreichen verschiedener ESP-Funktionen an Javascript (vgl. Firmata)                       *    
 *                                                                                                   *
 *****************************************************************************************************/
 
@@ -47,7 +30,6 @@ void ConfigSave( struct T_ConfigStruct* conf) {
    EEPROM.end();
 }
 
-
 void ConfigLoad( struct T_ConfigStruct* conf) {
    EEPROM.begin(512);
    uint8_t* confAsArray = (uint8_t*) conf;
@@ -69,12 +51,7 @@ void LoadAndCheckConfiguration( void) {
   }
 }
 
-
 char myIPaddress[18]="000.000.000.000  ";
-
-
-
-
 
 // Zeitserver und Zeithandling
 IPAddress timeServer(0, 0, 0, 0);  // wird per NTP ermittelt
@@ -86,7 +63,197 @@ TimeChangeRule *tcr;  // Zeiger auf aktuelle Zeitzone
 Timezone CE(CEST, CET);
 time_t localTime;
 
-LEDmatrix myMatrix(4,1);
+class RotationDisplay: public PovDisplay {
+  public:
+    RotationDisplay( uint8_t  LedData, uint8_t  LedClk, uint8_t  LedEna, uint8_t  LedLatch, 
+                                      uint8_t  M_A1, uint8_t  M_A2, uint8_t  M_B1, uint8_t  M_B2, 
+                                      uint8_t steps_per_pixel, uint8_t highlighted_steps, uint8_t column_offset, 
+                                      float rpm, uint8_t m_direction, uint8_t spacer);
+                                      //: PovDisplay( LedData, LedClk, LedEna, LedLatch, M_A1, M_A2, M_B1, M_B2, \
+                                      //  steps_per_pixel, highlighted_steps, column_offset, rpm, m_direction);
+    void _loop();
+    void _setBright(uint8_t brightness);
+    void _setSpeed(uint8_t speedval);
+    void _setMode(uint8_t mode, const char *content);
+  private:
+    uint8_t   _spacer;
+    uint8_t   _contentMode;
+    uint16_t  _contentPt;
+    char      _content[200];
+    File      _graphFile; 
+    void      _loopDateTime();
+    void      _loopText();
+    void      _loopGraphics();
+                                    
+                                       
+};  
+
+RotationDisplay::RotationDisplay( uint8_t  LedData, uint8_t  LedClk, uint8_t  LedEna, uint8_t  LedLatch, 
+                                  uint8_t  M_A1, uint8_t  M_A2, uint8_t  M_B1, uint8_t  M_B2, 
+                                  uint8_t steps_per_pixel, uint8_t highlighted_steps, uint8_t column_offset, 
+                                  float rpm, uint8_t m_direction, uint8_t spacer) \
+                                  : PovDisplay( LedData, LedClk, LedEna, LedLatch, M_A1, M_A2, M_B1, M_B2, \
+                                  steps_per_pixel, highlighted_steps, column_offset, rpm, m_direction){
+  _spacer = spacer;
+  _contentPt   = 0;
+  _contentMode = 4;
+  strlcpy( _content, "no data ", sizeof(_content));
+                                    
+}
+
+void RotationDisplay::_setMode(uint8_t mode, const char *content){
+  strlcpy( _content, content, sizeof(_content));
+  if(0 == strlen(_content)) { strlcpy(_content, "no text! ", sizeof(_content)); }
+  _contentMode = mode;
+  _contentPt   = 0;
+  if (0 == _contentMode) {  // normal Text
+    for( uint16_t j=0; j<=strlen(_content); j++){
+      // map certain latin1 characters to extended ascii cp437
+      // as that is the standard code from most fixed size fonts
+      switch(_content[j]) {
+        case 0xA7: _content[j]=0x15; break; // §
+        case 0xB5: _content[j]=0xE5; break; // µ
+        case 0xB0: _content[j]=0xF7; break; // °
+        case 0xB2: _content[j]=0xFC; break; // ²
+        case 0xFC: _content[j]=0x81; break; // ü
+        case 0xE4: _content[j]=0x84; break; // ä
+        case 0xEB: _content[j]=0x89; break; // ë
+        case 0xC4: _content[j]=0x8E; break; // Ä
+        case 0xCB: _content[j]=0x45; break; // Ë->E
+        case 0xD8: _content[j]=0xEC; break; // 
+        case 0xF6: _content[j]=0x94; break; // ö
+        case 0xD6: _content[j]=0x99; break; // Ö
+        case 0xDF: _content[j]=0xE1; break; // ß
+        case 0xDC: _content[j]=0x9A; break; // Ü
+        case 0xF7: _content[j]=0xF5; break; // 
+      }
+    }
+  }
+  if (5 == _contentMode) {  // Graphics
+    if (_graphFile.available()) { _graphFile.close(); }
+    _graphFile = SPIFFS.open(_content, "r");
+  }  
+  if (6 == _contentMode) {  // IP-Address
+    strlcpy(_content, myIPaddress, sizeof(_content)); strlcat(_content, "  ", sizeof(_content));  
+  }  
+  if ((0 < _contentMode) && (4 > _contentMode)) {
+   ntpClient.write(NTPpacket, sizeof(NTPpacket)); 
+   strlcpy(_content, "receiving time ", sizeof(_content)); 
+  }
+}  
+
+void RotationDisplay::_setBright(uint8_t brightness){
+  uint8_t highlight = map(brightness, 0,15,0, STEPS_PER_PIXEL);
+  _set_highlighted_steps(highlight);
+}
+   
+void RotationDisplay::_setSpeed(uint8_t speedval){
+  _set_speed(1.0+(speedval/40.0));
+}
+
+void RotationDisplay::_loop(){
+  switch( _contentMode) {
+    case  0: _loopText(); break;
+    case  1:
+    case  2:
+    case  3: _loopDateTime(); break;
+    case  5: _loopGraphics(); break;
+    default: _loopText();  // 6 is IP address
+  }
+
+}
+
+char* byte2text(uint16_t value){
+  static char convbuffer[6];
+  memset(convbuffer, 0, sizeof(convbuffer));
+  if (value < 10) {
+    convbuffer[0]=0x30;
+    convbuffer[1]=value+0x30;
+  } else 
+  itoa(value,convbuffer, 10);
+  return convbuffer;
+}
+
+void RotationDisplay::_loopDateTime(){
+  time_t t = CE.toLocal(now(), &tcr);
+  if (0 == _contentPt) {
+    memset(_content, 0, sizeof(_content));
+    switch (_contentMode) {
+      case 1: 
+        strlcat(_content, dayStr(weekday(t)),  sizeof(_content));
+        strlcat(_content, " ",  sizeof(_content));
+        strlcat(_content, byte2text(day(t)),  sizeof(_content));
+        strlcat(_content, ". ",  sizeof(_content));
+        strlcat(_content, monthStr(month(t)),  sizeof(_content));
+        strlcat(_content, " ",  sizeof(_content));
+        strlcat(_content, byte2text(year(t)),  sizeof(_content));
+        strlcat(_content, " ",  sizeof(_content));
+        strlcat(_content, byte2text(hour(t)),  sizeof(_content));
+        strlcat(_content, ":",  sizeof(_content));
+        strlcat(_content, byte2text(minute(t)),  sizeof(_content));
+        strlcat(_content, "  ",  sizeof(_content));
+        break;
+      case 2:
+        strlcat(_content, byte2text(day(t)),  sizeof(_content));
+        strlcat(_content, "-",  sizeof(_content));
+        strlcat(_content, byte2text(month(t)),  sizeof(_content));
+        strlcat(_content, "-",  sizeof(_content));
+        strlcat(_content, byte2text(year(t)),  sizeof(_content));
+        strlcat(_content, " ",  sizeof(_content));
+        strlcat(_content, byte2text(hour(t)),  sizeof(_content));
+        strlcat(_content, ":",  sizeof(_content));
+        strlcat(_content, byte2text(minute(t)),  sizeof(_content));
+        strlcat(_content, "  ",  sizeof(_content));
+        break;
+      case 3: 
+        strlcat(_content, byte2text(hour(t)),  sizeof(_content));
+        strlcat(_content, ":",  sizeof(_content));
+        strlcat(_content, byte2text(minute(t)),  sizeof(_content));
+        strlcat(_content, "  ",  sizeof(_content));
+        break;
+      default: strlcpy(_content,  "no valid time ", sizeof(_content)); break;
+    }    
+  }  
+  if(((minute(t)) % 20) == 0){
+    ntpClient.write(NTPpacket, sizeof(NTPpacket));
+  }
+  _loopText();
+}
+
+void RotationDisplay::_loopText(){
+  //Serial.printf("Content: [%s] Pos: [%d] Char: [%c]\n",_content, _contentPt, _content[_contentPt]);
+  for ( int j = 0; j < FONTCOLS; j++) {
+    while ( not _set_next_column(font[_content[_contentPt]][j])) {yield();};
+    /*
+    Serial.print("  ");
+    for( uint8_t i = 0; i < 8; Serial.print( bitRead(font[_content[_contentPt]][j], i++) ? "#" : " "));
+    Serial.println();
+    */
+  }
+  
+  _contentPt = (_contentPt + 1) % strlen(_content);
+}
+
+
+void RotationDisplay::_loopGraphics(){
+  uint8_t graphLine[1];
+  for ( int j = 0; j < 10; j++) {
+    _graphFile.seek(_contentPt,SeekSet);
+    _graphFile.read(graphLine, sizeof(graphLine));
+    while ( not _set_next_column(graphLine[0]) ) {yield();};
+    _contentPt = (_contentPt + 1) % _graphFile.size() ; 
+  }
+}
+
+
+RotationDisplay myDisplay(LED_DATA, LED_CLK, LED_ENABLE, LED_LATCH, 
+                          MOTOR_A1, MOTOR_B1, MOTOR_A2, MOTOR_B2, 
+                          STEPS_PER_PIXEL, 18, PIXEL_OFFSET, 2, CW, SPACER);
+
+
+
+
+
 
 void setup(){
   Serial.begin(115200);
@@ -118,12 +285,13 @@ void setup(){
   }
   setupTime();
   setupWebserver();
+  myDisplay._setMode(6,"");
 }
 
 
 
 void loop() {
-  myMatrix.loop();
+  myDisplay._loop();
   do_pending_Webserver_Actions();
 }
 

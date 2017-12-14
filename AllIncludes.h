@@ -1,7 +1,4 @@
-// gemeinsame Includes
-#ifndef LEDMatrixCommonIncludes
-#define LEDMatrixCommonIncludes  
-  // Workaround nach dem Split in Einzeldateien.
+#pragma once
   // Verwendete Bibliotheken   =========================================================================//
   
   #include "ESP8266WiFi.h"        // http://esp8266.github.io/Arduino/versions/2.3.0/doc/installing.html 
@@ -16,11 +13,11 @@
   #include <TimeLib.h>            // http://github.com/PaulStoffregen/Time
   #include <Timezone.h>           // http://github.com/JChristensen/Timezone
   
-  #include "FS.h"
   #include <EEPROM.h>
   #include <memory>
-  #include "display.h"
-  #include "5x8-vertikal-LSB-1.h"
+  #include "FS.h"
+  #include "POVdisplay.h"
+  #include "fonts.h"
 
   extern "C" {
     #include "user_interface.h"
@@ -39,6 +36,23 @@
   #define CONF_ADMIN_PWD "admin"
   #define CONF_DEFAULT_CHANNEL 4
 
+  
+  #define STEPS_PER_PIXEL 26
+  #define PIXEL_OFFSET    75
+  
+  #define LED_DATA   D8
+  #define LED_CLK    D6
+  #define LED_ENABLE D7
+  #define LED_LATCH  D0
+
+  #define MOTOR_A1 D1
+  #define MOTOR_A2 D2
+  #define MOTOR_B1 D4
+  #define MOTOR_B2 D3
+
+  #define SPACER 1
+
+
   // Zeitserver etc.
   #define TimeServerName "de.pool.ntp.org"
   #define TimeServerPort 123
@@ -52,4 +66,4 @@
 
 
 
-#endif
+

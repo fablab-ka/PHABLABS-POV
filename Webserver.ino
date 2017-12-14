@@ -1,4 +1,4 @@
-#include "AllIncludes.h"
+
 #include "Webcontent.h"
 // Bestandteile der Webseite ==============================================================================//
 
@@ -40,7 +40,7 @@ void handleOnContent(AsyncWebServerRequest *request){
   page+=FPSTR(JS_INIT_AFTER_LOAD);
   page+=F("</SCRIPT>");
   page+=FPSTR(HTML_CONTENT_HEADEND);
-  File menuFile = SPIFFS.open("/.menu.html", "r");
+  File menuFile = SPIFFS.open("/_menu.html", "r");
   while (menuFile.available()){
     page += menuFile.readStringUntil('\n');
   }
@@ -89,7 +89,7 @@ void handleConfigAP(AsyncWebServerRequest *request){
   page.replace("{title}", FPSTR(HTML_TITLE_CONFIG));
   page += FPSTR(HTML_BASIC_STYLES);
   page += FPSTR(HTML_BODYSTART);
-  File menuFile = SPIFFS.open("/.menu.html", "r");
+  File menuFile = SPIFFS.open("/_menu.html", "r");
   while (menuFile.available()){
     page += menuFile.readStringUntil('\n');
   }
@@ -141,7 +141,7 @@ void handleWiFiConnect2AP(AsyncWebServerRequest *request){
   page += FPSTR(HTML_SELECTSCRIPT);
   page += FPSTR(HTML_BASIC_STYLES);
   page += FPSTR(HTML_BODYSTART);
-  File menuFile = SPIFFS.open("/.menu.html", "r");
+  File menuFile = SPIFFS.open("/_menu.html", "r");
   while (menuFile.available()){
     page += menuFile.readStringUntil('\n');
   }
@@ -272,7 +272,6 @@ void handleApConfig(AsyncWebServerRequest *request){
   Serial.println("AP config done");
   String message="<html><body><h1>AP CONFIG NOT YET IMPLEMENTED</h1></body></html>";
   request->send(200, "text/html", message);
-  
 }
 
 
@@ -288,29 +287,29 @@ void handleOnContentSave(AsyncWebServerRequest *request){
     switch (myContent) {
       case 0:  p = request->getParam("text", true);
                Serial.println("content text");Serial.println(p->value().c_str());
-               myMatrix.setMode(0, p->value().c_str());
+               myDisplay._setMode(0, p->value().c_str());
                break;
       case 1:
       case 2:
-      case 3:  myMatrix.setMode(myContent, "");          
+      case 3:  myDisplay._setMode(myContent, "");          
                break;
       case 5:  p = request->getParam("graphics", true);
                Serial.print("graphics ");//Serial.println(p->value().c_str());
-               myMatrix.setMode(5, p->value().c_str());
+               myDisplay._setMode(myContent, p->value().c_str());
                break;
-      default: myMatrix.setMode(myContent, "");                     
+      default: myDisplay._setMode(myContent, "");                     
                break;
     }
   }  
   if (request->hasArg("speed")) {
     AsyncWebParameter* p = request->getParam("speed", true);
     Serial.println("request speed ");
-    myMatrix.setSpeed(strtol(p->value().c_str(), NULL, 10));
+    myDisplay._setSpeed(strtol(p->value().c_str(), NULL, 10));
   }
   if (request->hasArg("brightness")) {
     AsyncWebParameter* p = request->getParam("brightness", true);
     Serial.println("request brightness ");
-    myMatrix.setBright(strtol(p->value().c_str(), NULL, 10));
+    myDisplay._setBright(strtol(p->value().c_str(), NULL, 10));
   }
   request->send(204, "text/html");
 }
