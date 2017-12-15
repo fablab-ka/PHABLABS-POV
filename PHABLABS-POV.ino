@@ -148,7 +148,7 @@ void RotationDisplay::_setBright(uint8_t brightness){
 }
    
 void RotationDisplay::_setSpeed(uint8_t speedval){
-  _set_speed(1.0+(speedval/40.0));
+  _set_speed(1.0+(speedval/28.0));
 }
 
 void RotationDisplay::_loop(){

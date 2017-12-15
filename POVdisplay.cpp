@@ -18,7 +18,7 @@ PovDisplay::PovDisplay( uint8_t  LedData, uint8_t  LedClk, uint8_t  LedEna, uint
   _MotorStepState    = 0;
   _currPixelStep     = 0;
   _bufsize           = sizeof(_ringbuffer);
-  mySelf             = this;
+  _mySelf             = this;
   pinMode(_pinLedData, OUTPUT);
   pinMode(_pinLedClk, OUTPUT);
   pinMode(_pinLedEna, OUTPUT);
@@ -29,19 +29,18 @@ PovDisplay::PovDisplay( uint8_t  LedData, uint8_t  LedClk, uint8_t  LedEna, uint
   } 
   _currBackStep = ( 3*_steps_per_pixel - _column_offset) % _steps_per_pixel;
   _backstart = _bufsize - ((_column_offset+_steps_per_pixel-1) / _steps_per_pixel); 
-  os_timer_setfn(&myTimer, _callback_helper, NULL);
+  os_timer_setfn(&_myTimer, _callback_helper, NULL);
   _start_rotating();
 }
 
-os_timer_t PovDisplay::myTimer;
-PovDisplay * PovDisplay::mySelf;
+PovDisplay * PovDisplay::_mySelf;
 
 void PovDisplay::_start_rotating(){
-  os_timer_arm(&myTimer, _step_delay, true);
+  os_timer_arm(&_myTimer, _step_delay, true);
 }
 
 void PovDisplay::_stop_rotating(){
-  os_timer_disarm(&myTimer);
+  os_timer_disarm(&_myTimer);
 }
 
 void PovDisplay::_set_rotation(uint8_t dir){
@@ -111,7 +110,7 @@ void PovDisplay::_do_next_step( ) {
 
 
 void PovDisplay::_callback_helper(void *pArg) {
-    mySelf->_do_next_step();
+    _mySelf->_do_next_step();
 }
 
 void PovDisplay::_debug_me(){

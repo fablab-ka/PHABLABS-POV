@@ -20,8 +20,8 @@ class PovDisplay {
                 uint8_t  M_A1, uint8_t  M_A2, uint8_t  M_B1, uint8_t  M_B2, 
                 uint8_t steps_per_pixel, uint8_t highlighted_steps,  uint8_t column_offset, 
                 float rpm, uint8_t m_direction);
-    static PovDisplay * mySelf;
-    static os_timer_t myTimer;
+    static PovDisplay * _mySelf;
+    os_timer_t _myTimer;
     void _start_rotating();
     void _stop_rotating();
     void _set_rotation(uint8_t dir);

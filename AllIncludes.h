@@ -31,7 +31,7 @@
   #define CONF_MAGIC "flka" // unique identifier for project. Please change for forks of this code
   #define CONF_DEFAULT_SSID "ESPMATRIX"
   #define CONF_DEFAULT_PWD "ABCdef123456"
-  #define CONF_HOSTNAME "ESPTESTWMK"
+  #define CONF_HOSTNAME "ESPTEST"
   #define CONF_ADMIN_USER "admin"
   #define CONF_ADMIN_PWD "admin"
   #define CONF_DEFAULT_CHANNEL 4
