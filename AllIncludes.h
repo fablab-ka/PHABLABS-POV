@@ -17,7 +17,8 @@
   #include <memory>
   #include "FS.h"
   #include "POVdisplay.h"
-  #include "fonts.h"
+  #include "fonts.h" // 6x8
+  //#include "Font-5x8-vertikal-LSB-1.h"
 
   extern "C" {
     #include "user_interface.h"
@@ -61,7 +62,6 @@
   enum showContent {longtext, longdate, shortdate, shorttime, ownIP};
 
   
-  uint8_t myContent = ownIP;  // at StartUp show own IP address
   uint8_t speedval  = 100;    // Speed at Startup
 
 

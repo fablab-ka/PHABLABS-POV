@@ -69,8 +69,6 @@ class RotationDisplay: public PovDisplay {
                                       uint8_t  M_A1, uint8_t  M_A2, uint8_t  M_B1, uint8_t  M_B2, 
                                       uint8_t steps_per_pixel, uint8_t highlighted_steps, uint8_t column_offset, 
                                       float rpm, uint8_t m_direction, uint8_t spacer);
-                                      //: PovDisplay( LedData, LedClk, LedEna, LedLatch, M_A1, M_A2, M_B1, M_B2, \
-                                      //  steps_per_pixel, highlighted_steps, column_offset, rpm, m_direction);
     void _loop();
     void _setBright(uint8_t brightness);
     void _setSpeed(uint8_t speedval);
@@ -223,7 +221,7 @@ void RotationDisplay::_loopDateTime(){
 void RotationDisplay::_loopText(){
   //Serial.printf("Content: [%s] Pos: [%d] Char: [%c]\n",_content, _contentPt, _content[_contentPt]);
   for ( int j = 0; j < FONTCOLS; j++) {
-    while ( not _set_next_column(font[_content[_contentPt]][j])) {yield();};
+    while ( not _set_next_column((uint8_t)font[(uint8_t)_content[_contentPt]][j])) {yield();};
     /*
     Serial.print("  ");
     for( uint8_t i = 0; i < 8; Serial.print( bitRead(font[_content[_contentPt]][j], i++) ? "#" : " "));
