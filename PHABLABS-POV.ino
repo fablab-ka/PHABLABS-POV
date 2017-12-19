@@ -93,10 +93,7 @@ RotationDisplay::RotationDisplay( uint8_t  LedData, uint8_t  LedClk, uint8_t  Le
                                   : PovDisplay( LedData, LedClk, LedEna, LedLatch, M_A1, M_A2, M_B1, M_B2, \
                                   steps_per_pixel, highlighted_steps, column_offset, rpm, m_direction){
   _spacer = spacer;
-  _contentPt   = 0;
-  _contentMode = 4;
-  strlcpy( _content, "no data ", sizeof(_content));
-                                    
+  _setMode(6, "");                                    
 }
 
 void RotationDisplay::_setMode(uint8_t mode, const char *content){
@@ -136,7 +133,7 @@ void RotationDisplay::_setMode(uint8_t mode, const char *content){
   }  
   if ((0 < _contentMode) && (4 > _contentMode)) {
    ntpClient.write(NTPpacket, sizeof(NTPpacket)); 
-   strlcpy(_content, "receiving time ", sizeof(_content)); 
+   _contentPt = 0;
   }
 }  
 
