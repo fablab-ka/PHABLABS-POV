@@ -39,7 +39,7 @@
 
   
   #define STEPS_PER_PIXEL 26
-  #define PIXEL_OFFSET    75
+  #define PIXEL_OFFSET    0
   
   #define LED_DATA   D0
   #define LED_CLK    D6

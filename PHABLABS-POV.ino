@@ -1,3 +1,5 @@
+
+
 /****************************************************************************************************
 *                                                                                                   *
 *****************************************************************************************************/
@@ -243,7 +245,7 @@ void RotationDisplay::_loopGraphics(){
 
 RotationDisplay myDisplay(LED_DATA, LED_CLK, LED_ENABLE, LED_LATCH, 
                           MOTOR_A1, MOTOR_B1, MOTOR_A2, MOTOR_B2, 
-                          STEPS_PER_PIXEL, 18, PIXEL_OFFSET, 2, CCW, SPACER);
+                          STEPS_PER_PIXEL, 18, PIXEL_OFFSET, 2, CW, SPACER);
 
 
 
