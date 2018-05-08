@@ -41,15 +41,15 @@
   #define STEPS_PER_PIXEL 26
   #define PIXEL_OFFSET    75
   
-  #define LED_DATA   D8
+  #define LED_DATA   D0
   #define LED_CLK    D6
-  #define LED_ENABLE D7
-  #define LED_LATCH  D0
+  #define LED_ENABLE D8
+  #define LED_LATCH  D7
 
   #define MOTOR_A1 D1
   #define MOTOR_A2 D2
-  #define MOTOR_B1 D4
-  #define MOTOR_B2 D3
+  #define MOTOR_B1 D3
+  #define MOTOR_B2 D4
 
   #define SPACER 1
 

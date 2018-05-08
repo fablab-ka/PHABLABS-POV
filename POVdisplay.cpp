@@ -1,5 +1,21 @@
 #include "PovDisplay.h"
 
+/*  Die Ansteuerung des Displays ist darauf vorbereitet, dass die LEDs in zwei Spalten (A und B) versetzt angeordnet sind.
+ *   A B
+ *   O
+ *     O
+ *   O
+ *     O
+ *   O
+ *     O
+ *   O
+ *     O
+ *     
+ *  Mit einer solchen Anordnung können die LEDs das Raster sehr kompakt darstellen.  
+ *  In einem solchen Fall wird mit column_offset der Schrittabstandd zwischen beiden   
+ *  Spalten konfiguriert.  Mit einem Offset von 0 liegen die LEDs in einer Reihe.
+ */
+
 PovDisplay::PovDisplay( uint8_t  LedData, uint8_t  LedClk, uint8_t  LedEna, uint8_t  LedLatch, 
             uint8_t  M_A1, uint8_t  M_A2, uint8_t  M_B1, uint8_t  M_B2, 
             uint8_t steps_per_pixel, uint8_t highlighted_steps, uint8_t column_offset, 
@@ -82,7 +98,7 @@ void PovDisplay::_do_next_step( ) {
     output = output & 0b10101010;
   }
   digitalWrite(_pinLedClk, LOW);
-  shiftOut(_pinLedData, _pinLedClk, MSBFIRST, output);
+  shiftOut(_pinLedData, _pinLedClk, LSBFIRST, output);
   digitalWrite(_pinLedLatch, HIGH);
   digitalWrite(_pinLedLatch, LOW);
   
