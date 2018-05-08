@@ -1,4 +1,4 @@
-#include "PovDisplay.h"
+#include "POVdisplay.h"
 
 /*  Die Ansteuerung des Displays ist darauf vorbereitet, dass die LEDs in zwei Spalten (A und B) versetzt angeordnet sind.
  *   A B
