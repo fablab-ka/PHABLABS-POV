@@ -30,7 +30,7 @@
   // Webserver und WiFi Konfigurationen
   #define CONF_VERSION 1    // 1..255 incremented, each time the configuration struct changes
   #define CONF_MAGIC "flka" // unique identifier for project. Please change for forks of this code
-  #define CONF_DEFAULT_SSID "ESPMATRIX"
+  #define CONF_DEFAULT_SSID "PHABLABS-POV"
   #define CONF_DEFAULT_PWD "ABCdef123456"
   #define CONF_HOSTNAME "ESPTEST"
   #define CONF_ADMIN_USER "admin"
