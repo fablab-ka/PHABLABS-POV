@@ -66,16 +66,5 @@ Sobald man mit dem ESP verbunden ist, gibt es diese wichtigen URLs:
 - **/wifiRestartAP** Löscht die gespeicherten WLAN Client-Zugangsdaten und startet im AP-Mode
 - **/edit** Startet den eingebauten ACE Editor, um die auf dem SPIFFS abgelegten Dateien zu editieren.  Für den Editor is es nun unabdingbar, dass der Inhalt des data-Unterverzeichnisses mittels des oben beschriebenen [ESP-Uploadmanagers](http://esp8266.github.io/Arduino/versions/2.3.0/doc/filesystem.html#uploading-files-to-file-system "ESP-Uploadmanager") auf des SPIFFS geladen wird. Ansonsten werden die Javascriptdateien nicht gefunden!
 
-Verdrahtung
------------
-Es ist wichtig, dem ESP einen möglichst großen Stützkondensator zur Seite zu stellen.  Je nach USB-Port kommt es sonst zu Fehlverhalten beim Programmieren.  Sollten mehr als 4 LED-Module in Reihe geschaltet werden, so ist dafür zu sorgen, dass die LED-Module eine vom Programmierport unabhängige Spannungsversorgung erhalten.
-Ansonsten werden die folgenden PINs miteinander verbunden:
-
-|Wemos D1 mini|LED-Matrix|
-|-------------|----------|
-| D5 (14/CLK) | CLK|
-| D6 (12/MISO)| CS |
-| D7 (13/MOSI)| DIN|
-
 
 
