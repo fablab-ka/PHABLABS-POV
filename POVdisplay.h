@@ -28,6 +28,7 @@ class PovDisplay {
     void _set_speed(float rpm);
     bool _set_next_column (uint8_t value);
     void _debug_me();
+    void _highlight8LEDs();
  
   private:
     const uint8_t _stepValues[8] = {0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001, 0b1001, 0b1000};

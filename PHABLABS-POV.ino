@@ -134,6 +134,7 @@ void RotationDisplay::_setMode(uint8_t mode, const char *content){
     strlcpy(_content, myIPaddress, sizeof(_content)); strlcat(_content, "  ", sizeof(_content));  
   }  
   if ((0 < _contentMode) && (4 > _contentMode)) {
+    // _contentMode 1,2,3 are time/date modes
    ntpClient.write(NTPpacket, sizeof(NTPpacket)); 
    _contentPt = 0;
   }
@@ -253,6 +254,7 @@ RotationDisplay myDisplay(LED_DATA, LED_CLK, LED_ENABLE, LED_LATCH,
 
 
 void setup(){
+  myDisplay._highlight8LEDs();
   Serial.begin(115200);
   Serial.setDebugOutput(true);
   LoadAndCheckConfiguration();

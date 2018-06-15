@@ -126,3 +126,14 @@ void PovDisplay::_debug_me(){
   // put Debug output of private members here
 }  
 
+void PovDisplay::_highlight8LEDs() {
+  // at startup power all LEDs, to make sure, they are all working
+  digitalWrite(_pinLedClk, LOW);
+  shiftOut(_pinLedData, _pinLedClk, LSBFIRST, 255);
+  digitalWrite(_pinLedLatch, HIGH);
+  digitalWrite(_pinLedLatch, LOW);
+
+  
+}
+
+
