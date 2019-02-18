@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title> Connect to WLAN </title>
+    <link rel="stylesheet" type="text/css" media="screen" href="./main.css" />
+  </head>
+  <body>
+    <script>
+      function c(l){document.getElementById('s').value=l.innerText||l.textContent;document.getElementById('p').focus();}
+    </script>
+  
+  <div class="menu" id="AJAXLOAD-menu">Menu later here </div>    
+    <h1> Suche und Verbinde zu WLANs  </h1>
+    <div id="wlans" class="table">
+      <h3>Please wait, scanning for WLANs in progress ...</h3>
+    </div>
+  </div>
+    <br>
+    <br>
+    <br>
+    <form method='post' action='/wifiRestartAP'>
+      <input id='s' name='s' length="32" placeholder='SSID'>
+      <br>
+      <input id='p' name='p' length="64" type='password' placeholder='password'>
+      <br>
+      <br>
+      <br>
+      <button type='submit'>Verbinden</button>
+    </form>
+    <br>
+    <a href="/wifiRestartSTA">Als Accesspoint starten</a>
+    <br>
+    <script src="./main.js"></script>
+    <script>
+      replaceAjaxDivs();
+      let wsUri="";
+      if (location.protocol == "http:") {
+        wsUri = "ws://"+location.host+"/ws";
+      }  else if (location.protocol == "https:") {
+        wsUri = "wss://"+location.host+"/ws";
+      }
+      let WS = new socketHandler(wsUri);
+      let wlans = {};
+      WS.addOnMessage( function(evt) {
+        let response=evt.data;
+        if (response.substr(0,8) === "JSONDATA"){
+          let resObj = JSON.parse(response.slice(8));
+          wlans[resObj.SSID+resObj.BSSID]=resObj;
+        }
+      });
+      
+      function requestWlanData() {
+        WS.send("{\"magic\": \"FLKA\",\"cmd\": \"LISTWLANS\" } ");      
+      }  
+      
+      function createWlanTable() {
+        if (Object.keys(wlans).length) {
+          let newTable="";
+          for (let val of  Object.keys(wlans).sort()) {
+            console.log(val);
+            console.log(wlans[val]);
+            newTable+="<div class=\"row row2\"><div class=\"cell SSID\">";
+            newTable+="<a href='#p' onclick='c(this)'>";
+            newTable+=wlans[val].SSID;
+            newTable+="</a></div><div class=\"cell QUALITY\"";
+            let rssi=wlans[val].RSSI;
+            switch (true) {
+              case (rssi > -50): newTable+=" value=\"darkgreen\"";
+                                 break;
+              case (rssi > -55): newTable+=" value=\"green\"";
+                                 break;
+              case (rssi > -60): newTable+=" value=\"lightgreen\"";
+                                 break;
+              case (rssi > -65): newTable+=" value=\"yellow\"";
+                                 break;
+              case (rssi > -70): newTable+=" value=\"orange\"";
+                                 break;
+              default          : newTable+=" value=\"red\"";
+                                 break;
+            }
+            newTable+=" >"+rssi;
+            newTable+="</div><div class=\"cell SECURITY\">";
+            switch (wlans[val].encType) {
+              case 2: newTable+="WPA2 (TKIP)";
+                      break;
+              case 4: newTable+="WPA (CCMP)";
+                      break;
+              case 5: newTable+="WEP :-(";
+                      break;
+              case 7: newTable+="offen-ungesichert";
+                      break;
+              case 8: newTable+="AUTO";
+                      break;
+              default: newTable+="unknown";
+                      break;
+            }
+            newTable+="</div><div class=\"cell CHANNEL\">";
+            newTable+=wlans[val].Channel;
+            newTable+="</div><div class=\"cell MAC\">";
+            newTable+=wlans[val].BSSID;
+            newTable+="</div></div>";
+          };
+          let table=document.getElementById("wlans");
+          table.innerHTML=newTable;
+        }  
+      }
+      setInterval(requestWlanData, 3000);
+      setInterval(createWlanTable, 5000);      
+      
+    </script>
+  </body>
+</html>

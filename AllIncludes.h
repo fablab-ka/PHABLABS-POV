@@ -10,6 +10,7 @@
   #include <ESPAsyncWebServer.h>  // http://github.com/me-no-dev/ESPAsyncWebServer
   #include <SPIFFSEditor.h>       // http://github.com/me-no-dev/ESPAsyncWebServer
   
+  #include <ArduinoJson.h>        // https://arduinojson.org
   #include <TimeLib.h>            // http://github.com/PaulStoffregen/Time
   #include <Timezone.h>           // http://github.com/JChristensen/Timezone
   
@@ -63,7 +64,3 @@
 
   
   uint8_t speedval  = 100;    // Speed at Startup
-
-
-
-

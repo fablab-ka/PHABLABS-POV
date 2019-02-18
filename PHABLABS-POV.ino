@@ -291,7 +291,5 @@ void setup(){
 
 void loop() {
   myDisplay._loop();
-  do_pending_Webserver_Actions();
+  do_pending_Actions();
 }
-
-

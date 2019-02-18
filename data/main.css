@@ -1,0 +1,87 @@
+ul {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}  
+ul.topnav {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+}
+ul.topnav li {float: left;}
+ul.topnav li a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+ul.topnav li a:hover:not(.active) {background-color: #111;}
+ul.topnav li a.active {background-color: #4CAF50;}
+ul.topnav li.right {float: right;}
+.table {
+  display: table;
+  padding: 2px;
+  -moz-box-shadow:    3px 3px 5px 6px #ccc;
+  -webkit-box-shadow: 3px 3px 5px 6px #ccc;
+  box-shadow:         3px 3px 5px 6px #ccc;
+} 
+.row2:nth-child(2n+1) {
+  background: #ddd;
+}
+
+.cell{
+  display: table-cell;
+  border:none;
+  padding:3px;
+} 
+
+legend {
+  font-style: italic;
+  font-weight: bolder;
+  font-size: large;
+}
+
+.SSID{
+  padding-right: 2em;
+} 
+.QUALITY{
+  padding-right: 1em;
+} 
+.QUALITY[value="darkgreen"]{
+  color: darkgreen;
+}  
+.QUALITY[value="green"]{
+  color: green;
+}  
+.QUALITY[value="lightgreen"]{
+  color: lightgreen;
+}  
+.QUALITY[value="yellow"]{
+  color: yellow;
+}  
+.QUALITY[value="orange"]{
+  color: orange;
+}  
+.QUALITY[value="red"]{
+  color: red;
+}  
+
+.SECURITY{
+  padding-right: 1em;
+} 
+.CHANNEL{
+  padding-right: 1em;
+  text-align: right;
+} 
+.MAC{
+  font-family: monospace;
+} 
+.row{
+  display: table-row;
+  border:none;
+  padding:1px;
+}
+

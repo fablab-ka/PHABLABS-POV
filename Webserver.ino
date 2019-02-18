@@ -1,26 +1,45 @@
+boolean pending_reboot = false;
+volatile boolean scanForWLANS = true;
+volatile uint8_t semaWLAN = 0;
 
-#include "Webcontent.h"
-// Bestandteile der Webseite ==============================================================================//
+uint8_t setWLANsema() {
+  uint8_t result=0;
+  noInterrupts();
+    if (0 == semaWLAN) {
+      semaWLAN=1;
+      result=1;
+    }
+  interrupts();
+  return( result);  
+}
+
+uint8_t clearWLANsema() {
+  uint8_t result=1;
+  noInterrupts();
+    if (1 == semaWLAN) {
+      semaWLAN=0;
+      result=0;
+    }
+  interrupts();
+  return( result);  
+}
 
 // Webserver
 AsyncWebServer server(80);
+AsyncWebSocket ws("/ws"); // access at ws://[esp ip]/ws
 
 
-boolean pending_reboot = false;
 
-
-void setupWebserver()
-{
+void setupWebserver() { 
+  ws.onEvent(onWsEvent);
+  server.addHandler(&ws);
   server.addHandler(new SPIFFSEditor(GlobalConfig.myAdminUser,GlobalConfig.myAdminPWD));
   server.on("/contentsave", HTTP_POST|HTTP_GET, handleOnContentSave);
-  server.on("/content", HTTP_GET, handleOnContent);
-  server.on("/wificonnectAP", HTTP_GET, handleWiFiConnect2AP);
-  server.on("/wificonfigAP", HTTP_POST|HTTP_GET, handleConfigAP);
+  server.on("/saveConfig", HTTP_POST|HTTP_GET, handleSaveConfig);
+  server.on("/getConfigData", HTTP_POST|HTTP_GET, handleGetConfigData);
   server.on("/wifiRestartAP", HTTP_POST, handleWiFiRestartAP);
   server.on("/wifiRestartSTA", HTTP_GET, handleWiFiRestartSTA);
-  server.on("/wpsconfig", HTTP_GET, handleWPSConfig);
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
-  
   server.begin();
 }
 
@@ -31,30 +50,29 @@ void printFreeHeap(int pagesize) {
   Serial.println(pagesize);
 }
 
-void handleOnContent(AsyncWebServerRequest *request){
-  String page = FPSTR(HTML_CONTENT_HEAD);
-  page+=F("<SCRIPT>");
-  page+=FPSTR(JS_SORT_BY_KEY);
-  page+=FPSTR(JS_DO_GET_REQUEST);  
-  page+=FPSTR(JS_POPULATE_SELECTION);
-  page+=FPSTR(JS_INIT_AFTER_LOAD);
-  page+=F("</SCRIPT>");
-  page+=FPSTR(HTML_CONTENT_HEADEND);
-  File menuFile = SPIFFS.open("/_menu.html", "r");
-  while (menuFile.available()){
-    page += menuFile.readStringUntil('\n');
-  }
-  menuFile.close();
-  page+=FPSTR(HTML_CONTENT_BODY);
-  request->send(200, "text/html", page);
+
+
+
+void handleGetConfigData( AsyncWebServerRequest *request){
+  if(!request->authenticate( GlobalConfig.myAdminUser, GlobalConfig.myAdminPWD))
+    return request->requestAuthentication();
+
+  struct T_ConfigStruct tempConf;
+  char myAdminPWD2[20];
+  char buffer[200];
+  snprintf(buffer, sizeof(buffer), "{\"SSID\": \"%s\", \"WLANPWD\": \"%s\", \"CHANNEL\": \"%u\", \"ADMPWD\": \"%s\"}\n", 
+           GlobalConfig.mySSID, GlobalConfig.myPWD, GlobalConfig.myChannel, GlobalConfig.myAdminPWD);
+  request->send(200, "text/html", buffer);
 }
 
 
 
-void handleConfigAP(AsyncWebServerRequest *request){
+
+
+void handleSaveConfig(AsyncWebServerRequest *request){
   if(!request->authenticate(GlobalConfig.myAdminUser, GlobalConfig.myAdminPWD))
     return request->requestAuthentication();
-  Serial.println("Config Start");
+  Serial.println("save config");
 
   struct T_ConfigStruct tempConf;
   char myAdminPWD2[20];
@@ -85,23 +103,6 @@ void handleConfigAP(AsyncWebServerRequest *request){
       } 
     }
   }
-  String page = FPSTR(HTML_HEAD);
-  page.replace("{title}", FPSTR(HTML_TITLE_CONFIG));
-  page += FPSTR(HTML_BASIC_STYLES);
-  page += FPSTR(HTML_BODYSTART);
-  File menuFile = SPIFFS.open("/_menu.html", "r");
-  while (menuFile.available()){
-    page += menuFile.readStringUntil('\n');
-  }
-  menuFile.close();
-  page = page+"<h1>"+FPSTR(HTML_TITLE_CONFIG)+"</h1>";
-  String form=FPSTR(HTML_GLOBAL_CONF );
-  form.replace("{SSID}",GlobalConfig.mySSID);
-  form.replace("{WLANPWD}",GlobalConfig.myPWD);
-  String ch; ch+=GlobalConfig.myChannel;
-  form.replace("{CH}",ch);
-  form.replace("{ADMPWD}",GlobalConfig.myAdminPWD);
-
   if (params >2)  {
     Serial.println("Configuration complete");
     if((strlen(tempConf.myAdminPWD) > 0) and 
@@ -110,89 +111,16 @@ void handleConfigAP(AsyncWebServerRequest *request){
       strlcpy(tempConf.magic, CONF_MAGIC, sizeof(tempConf.magic));
       tempConf.version=CONF_VERSION;
       ConfigSave(&tempConf);
-      pending_reboot=true;
-      request->send(200, "text/plain", "OK");
+      LoadAndCheckConfiguration();
+      request->send(204, "text/plain", "OK");
       return;
     } else {
-      page+=FPSTR(HTML_PWD_WARN);
+      request->send(204, "text/plain", "ERROR");
     }
-  }
-  
-  page+=form;page+="<br>";
-  page+=FPSTR(HTML_BODYEND);
-  request->send(200, "text/html", page);
-}
-
-
-
-
-
-
-
-void handleWiFiConnect2AP(AsyncWebServerRequest *request){
-  Serial.println("WiFiConfig Start");
-  int16_t numWLANs=  WiFi.scanComplete();
-  if (numWLANs == -2) { // es gab bislang noch keinen WLAN-Scan
-    WiFi.scanNetworks(true);
-    Serial.print("Scan start at: ");Serial.println(millis());
-  }
-  String page = FPSTR(HTML_HEAD);
-  page.replace("{title}", FPSTR(HTML_TITLE_APCONNECT));
-  page += FPSTR(HTML_SELECTSCRIPT);
-  page += FPSTR(HTML_BASIC_STYLES);
-  page += FPSTR(HTML_BODYSTART);
-  File menuFile = SPIFFS.open("/_menu.html", "r");
-  while (menuFile.available()){
-    page += menuFile.readStringUntil('\n');
-  }
-  menuFile.close();
-  
-  page = page+"<h1>"+FPSTR(HTML_TITLE_APCONNECT)+"</h1>";
-  if (numWLANs == -1) { //scan still in progress
-    // warte, bis der Scan fertig ist
-    while(numWLANs == -1){ yield(); numWLANs=  WiFi.scanComplete();}
-  }
-  if (numWLANs == 0) {
-    page += FPSTR(HTML_NO_WLAN_FOUND);  
   } else {
-    page += FPSTR(HTML_DIVTABLESTART);
-    for (uint16_t i=0; i<numWLANs; i++) {
-      page += FPSTR(HTML_ROWTABLESTART);
-      Serial.print("List Network no: ");
-      Serial.println(i);
-      String wlan    = FPSTR(HTML_ACCESSPOINT_INFO);
-      String quality; quality+=WiFi.RSSI(i);
-      wlan.replace("{wlan}",WiFi.SSID(i));
-      wlan.replace("{quality}",quality);
-      switch (WiFi.encryptionType(i)) {
-        case 2: wlan.replace("{security}","WPA2 (TKIP)");break;
-        case 4: wlan.replace("{security}","WPA (CCMP)");break;
-        case 5: wlan.replace("{security}","WEP :-(");break;
-        case 7: wlan.replace("{security}","ungesichert");break;
-        case 8: wlan.replace("{security}","AUTO");break;
-        default: wlan.replace("{security}","unknown");break;
-      }
-      wlan.replace("{mac}",WiFi.BSSIDstr(i));
-      String channel; channel+=WiFi.channel(i);
-      wlan.replace("{ch}",channel);
-      page+=wlan;
-      page += FPSTR(HTML_DIVEND);  //row
-    }
-    page += FPSTR(HTML_DIVEND);
-    
+    request->send(204, "text/plain", "ERROR");
   }
-  page+="<br><br>";
-  
-  page+=FPSTR(HTML_FORM_SSID_PWD );page+="<br>";
-  page+=FPSTR(HTML_LINK_SCAN_CONFIG);page+="<br>";
-  page+=FPSTR(HTML_LINK_AP_CONFIG);page+="<br>";
-  //page+=FPSTR(HTML_LINK_WPS);page+="<br>";
-  page+=FPSTR(HTML_BODYEND);
-  request->send(200, "text/html", page);
-  WiFi.scanNetworks(true);  //Starte nächsten WLAN-Scan (nach dem Requestende des Servers!!)
 }
-
-
 
 
 
@@ -210,7 +138,7 @@ void handleWiFiRestart(AsyncWebServerRequest *request, boolean asAP){
   char  clientPWD[64]  = "";  
   Serial.println("WiFiSave start");
   int params = request->params();
-  String page;
+  String page = "";
   if (asAP) {
     for(int i=0;i<params;i++){
       AsyncWebParameter* p = request->getParam(i);
@@ -225,30 +153,12 @@ void handleWiFiRestart(AsyncWebServerRequest *request, boolean asAP){
         }
       }
     }
-    page += FPSTR(HTML_HEAD);
-    page.replace("{title}", "Versuche zu WLAN zu verbinden");
-  } else {  
-    page += FPSTR(HTML_HEAD);
-    page.replace("{title}", "Restart als Accesspoint");
   }
-  page += FPSTR(HTML_SELECTSCRIPT);
-  page += FPSTR(HTML_BASIC_STYLES);
-  page += FPSTR(HTML_MENU_STYLE);
-  page += FPSTR(HTML_BODYSTART);
-  page += FPSTR(HTML_MENU);
-  String line;
-  if (asAP) {
-    line = FPSTR(HTML_MSG_RESTART_STA);
-  } else {
-    line = FPSTR(HTML_MSG_RESTART_AP);  
+  File menuFile = SPIFFS.open("/decodeIP.html", "r");
+  while (menuFile.available()){
+    Serial.println("  reading line...");
+    page += menuFile.readStringUntil('\n');
   }
-  line.replace("{SSID}",GlobalConfig.mySSID );
-  line.replace("{PWD}", GlobalConfig.myPWD);
-  page+=line; 
-  page+=FPSTR(HTML_LINK_SCAN_CONFIG);page+="<br/>";
-  page+=FPSTR(HTML_LINK_AP_CONFIG);page+="<br/>";
-  //page+=FPSTR(HTML_LINK_WPS);page+="<br/>";
-  page+=FPSTR(HTML_BODYEND);
   request->send(200, "text/html", page);
   Serial.println("Request done");
   struct station_config newConf;  memset(&newConf, 0, sizeof(newConf));
@@ -261,18 +171,6 @@ void handleWiFiRestart(AsyncWebServerRequest *request, boolean asAP){
   pending_reboot=true; //make sure, ESP gets rebooted
 }
 
-void handleWPSConfig(AsyncWebServerRequest *request){
-  Serial.println("wps config done");
-  String message="<html><body><h1>WPSCONFIG NOT YET IMPLEMENTED</h1></body></html>";
-  request->send(200, "text/html", message);
-  
-}
-
-void handleApConfig(AsyncWebServerRequest *request){
-  Serial.println("AP config done");
-  String message="<html><body><h1>AP CONFIG NOT YET IMPLEMENTED</h1></body></html>";
-  request->send(200, "text/html", message);
-}
 
 
 
@@ -315,24 +213,96 @@ void handleOnContentSave(AsyncWebServerRequest *request){
 }
 
 
-void do_pending_Webserver_Actions(void){
+void sendWLANscanResult( AsyncWebSocketClient * client) {
+  if ( 1 == setWLANsema()) {
+    int16_t numWLANs=  WiFi.scanComplete();
+    if (0 < numWLANs) {
+      for (uint16_t i=0; i<numWLANs; i++) {
+        char buffer[200];
+        snprintf(buffer, sizeof(buffer), "JSONDATA{\"SSID\": \"%s\", \"encType\": %u, \"RSSI\": \"%d\", \"BSSID\": \"%s\", \"Channel\": %u, \"Hidden\": \"%s\"}",
+                WiFi.SSID(i).c_str(), WiFi.encryptionType(i), WiFi.RSSI(i), WiFi.BSSIDstr(i).c_str(), WiFi.channel(i), WiFi.isHidden(i) ? "true" : "false");
+        client->text(buffer);
+      }
+    } else {
+      client->text("[\"no WLAN found\"]\n");
+    }
+    clearWLANsema();
+  } else {
+    client->text("[\"no WLAN found\"]\n");
+  }
+}
+
+void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
+  StaticJsonBuffer<300> jsonBuffer;
+  Serial.println("Websockets fired");
+  if(type == WS_EVT_CONNECT){
+    //client connected
+    client->printf("Hello Client %u :)", client->id());
+    client->ping();
+  } else if(type == WS_EVT_DISCONNECT){
+  } else if(type == WS_EVT_ERROR){
+  } else if(type == WS_EVT_PONG){
+    // pong message was received (in response to a ping request maybe)
+    // os_printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
+  } else if(type == WS_EVT_DATA){
+    //data packet
+    AwsFrameInfo * info = (AwsFrameInfo*)arg;
+    if(info->final && info->index == 0 && info->len == len){
+      //the whole message is in a single frame and we got all of it's data
+      if(info->opcode == WS_TEXT) {
+        data[len] = 0;
+        JsonObject &root = jsonBuffer.parseObject((char*)data);
+       if ( !root.success() ) {
+        } else {
+          const char* magic = root["magic"];
+          const char* cmd = root["cmd"];
+          if (0 == strncmp("FLKA", magic, 4)) {
+            if(0 == strncmp("LISTWLANS", cmd, 9)) {
+              sendWLANscanResult(client);
+              scanForWLANS = true;
+              Serial.println("scan4wlan true!");
+            }
+          }
+        }
+      } else {
+        // we currently dont react on binary messages
+      }  
+    } else {
+      // we don't expect fragmentation either
+    }
+  }
+}
+
+
+void do_pending_Actions(void){
   // do all things, which need to be done after an asynchronous request
   if (pending_reboot) {
     Serial.println("Restarting system, hold on");
-    delay(1000);
+    delay(4000);
     // Sicherstellen, dass die GPIO-Pins dem Bootloader das erneute Starten des Programmes erlauben!
     pinMode( 0,OUTPUT);
     pinMode( 2,OUTPUT);
     pinMode(15,OUTPUT);
+    WiFi.forceSleepBegin(); 
+    wdt_reset();  
     digitalWrite(15, LOW);
     digitalWrite( 0,HIGH);
     digitalWrite( 2,HIGH);
     delay(50);
     ESP.restart();
   }  
-  
+  if (scanForWLANS) {
+    if ( 1==setWLANsema()) {
+      int16_t noWlans= WiFi.scanComplete();
+      if ( noWlans != -1 ) {
+        WiFi.scanNetworks(true, true);
+        scanForWLANS = false;
+      }  
+      clearWLANsema();
+    }  
+  }
+   
 }
-
 
 void setupTime()
 {
@@ -361,7 +331,3 @@ void setupTime()
     } else {Serial.println("No connection to NTP Server possible");} 
   ntpClient.write(NTPpacket, sizeof(NTPpacket));  
 }
-
-
-
-
