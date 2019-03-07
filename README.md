@@ -75,18 +75,13 @@ aktuell implementierte Funktionen
 Derzeit startet der ESP in den AP-Mode und ist über den im Sourcecode hinterlegten SSID-Namen **ESPMATRIX** und das Passwort **ABCdef123456** erreichbar.
 Sollte der ESP bereits die Zugangsinformationen zu einem aktuell erreichbaren WLAN gespeichert haben (z.B. weil vorher ein anderer Sketch geladen war), so verbindet er sich dorthin!
 Die LED-Matric zeigt in allen Fällen dann die IP-Adresse an, unter der der ESP zu erreichen ist. 
-Sollte der ESP sich nicht programmieren lassen, oder sollte es Probleme beim Verbinden mit WLANs geben, so ist es ratsam, den ESP zunächst komplett zu löschen. Dies geschieht mit dem esptool.py:
-```Shell
-python path/to/esptool.py --port COMPORTNAME erase_flash
-```
-Dies kann auch bei neu gekauften Modulen notwendig sein, da diese manchmal mit inkompatiblem Aufbau der Speicherstrukturen zur Arduino IDE ausgeliefert werden. Die Arduino-IDE schreibt nur in der ersten Speicherblock und geht dabei [von einem Standardlayout aus](http://esp8266.github.io/Arduino/versions/2.3.0/doc/filesystem.html#flash-layout "Flash Layout")!
-Das ist einerseits sinnvoll, weil so keine Inhalte der anderen Speicherbereiche angerührt werden, kann aber zu Problemen führen, wenn diese Bereich nicht so liegen bzw. gefüllt sind, wie dies die IDE oder der Sketch erwartet!
+
 Sobald man mit dem ESP verbunden ist, gibt es diese wichtigen URLs:
 - **/content**  Erlaubt Inhalt, Helliugkeit und Geschwindigkeit des Textes einzustellen. Uhrzeit und Datum sind derzeit nur dann aktuell, wenn der ESP sich als Client in einem WLAN befindet und einen NTP-Server erreicht (de.pool.ntp.org).
 - **/wificonnectAP** Ermöglicht es dem ESP, sich als Client an ein vorhandenes WLAN zu verbinden.
 - **/wificonfigAP** Erlaubt es, SSID und Passwort für den AP Mode, sowie das Passwort für den Administrationsaccount (voreingestellt admin/admin) zu ändern.
 - **/wifiRestartAP** Löscht die gespeicherten WLAN Client-Zugangsdaten und startet im AP-Mode
-- **/edit** Startet den eingebauten ACE Editor, um die auf dem SPIFFS abgelegten Dateien zu editieren.  Für den Editor is es nun unabdingbar, dass der Inhalt des data-Unterverzeichnisses mittels des oben beschriebenen [ESP-Uploadmanagers](http://esp8266.github.io/Arduino/versions/2.3.0/doc/filesystem.html#uploading-files-to-file-system "ESP-Uploadmanager") auf des SPIFFS geladen wird. Ansonsten werden die Javascriptdateien nicht gefunden!
+- **/edit** Startet den eingebauten ACE Editor, um die auf dem SPIFFS abgelegten Dateien zu editieren.  Für den Editor is es nun unabdingbar, dass der Inhalt des data-Unterverzeichnisses mittels des oben beschriebenen [ESP-Uploadmanagers](http://esp8266.github.io/Arduino/versions/2.3.0/doc/filesystem.html#uploading-files-to-file-system) auf des SPIFFS geladen wird. Ansonsten ist keine Anzeige von Webseiten und damit keine Funktion möglich!
 
 
 
