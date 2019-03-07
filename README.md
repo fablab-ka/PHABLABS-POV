@@ -1,7 +1,7 @@
 PHABLABS-POV
 ===
 ___
-Das hier gibt die Software für das POV-Device des PHABLABS 4.0 Projektes, Grundlage ist ein zuvor entwickeltes ESP-Matrixdisplay
+Das hier ist die Software für das POV-Device des PHABLABS 4.0 Projektes, Grundlage ist ein zuvor entwickeltes ESP-Matrixdisplay
 
 
 Komponenten
@@ -10,28 +10,50 @@ Als Controller wird ein ESP8266 in Form eines WeMos D1 mini verwendet.
 
 Weiterhin sind weitere vorgefertigte Funktionen im ESP denkbar, so dass neben freien Texten und Zeitinformationen auch andere Informationen aus dem Internet geholt und dargestellt werden können.
 
-Es wird empfohlen eine möglichst aktuelle Arduino-IDE (mindestens 1.8.3) zu verwenden. Bei älteren IDEs kommt es mit den aktuellen ESP-Toolchains zu Problemen.  Die verwendeten asynchronen Bibliotheken benötigen mindestens die Version 2.3 des ESP-Tools, die entweder über den [Boardmanager](https://github.com/esp8266/Arduino#installing-with-boards-manager) oder aber direkt als [GIT-Version] (https://github.com/esp8266/Arduino#using-git-version)installiert werden kann.
+Es wird empfohlen eine möglichst aktuelle Arduino-IDE (1.8.x) zu verwenden. Bei älteren IDEs kommt es mit den aktuellen ESP-Toolchains zu Problemen.  Die verwendeten asynchronen Bibliotheken benötigen mindestens die Version 2.3 des ESP-Tools, die entweder über den [Boardmanager](https://github.com/esp8266/Arduino#installing-with-boards-manager) oder aber direkt als [GIT-Version] (https://github.com/esp8266/Arduino#using-git-version)installiert werden kann.
 
-Zusätzlich muss der Arduino-IDE noch der [ESP-Uploadmanager hinzugefügt werden](http://esp8266.github.io/Arduino/versions/2.3.0/doc/filesystem.html#uploading-files-to-file-system "Uploading files to SPIFFS"). Damit bekommt die IDE unter dem Werkzeuge Menupunkt eine weitere Option: **"ESP8266 Sketch Data Upload"**. 
+Zusätzlich muss der Arduino-IDE noch der [ESP-Uploadmanager hinzugefügt werden](http://esp8266.github.io/Arduino/versions/2.3.0/doc/filesystem.html#uploading-files-to-file-system). Damit bekommt die IDE unter dem Werkzeuge Menupunkt eine weitere Option: **"ESP8266 Sketch Data Upload"**. 
 Mit dem Uploadmanager werden alle Dateien aus einem Unterverzeichnis namens "data" in ein SPIFFS-Dateisystem konvertiert und in den zweiten, 3MB großen, FLASH-Bereich des WeMos D1 mini geladen.
 
 Zum Fehlersuchen ist die Erweiterung [ESP Exception Stack Decoder](https://github.com/me-no-dev/EspExceptionDecoder) hilfreich, mit deren Hilfe festgestellt werden kann, wo etwas schief läuft, wenn beim Debuggen im Terminalfenster ein hexadezimaler Stackdump angezeigt wird.
 
 Bibliotheken
 ------------
-Verwendung finden die folgenden Bibliotheken aus Github, die für das Projekt gepatcht wurden. Diese gepatchten Bibliotheken finden sich im Ordner "libraries" dieses Repositories und müssen vor dem Kompilieren in den libraries-Ordner der Arduino-UMgebung verschoben werden.
+Die folgende Bibliothek aus Github wurde für das Projekt gepatcht. Die gepatchten Bibliothek findet sich im Ordner "libraries" dieses Repositories und muss vor dem Kompilieren in den libraries-Ordner der Arduino-Umgebung verschoben oder kopiert werden. Sie hierzu: [Manuelle Installation von Bibliotheken ](https://www.arduino.cc/en/Guide/Libraries#toc5)
 
-- [**ESPAsyncWebServer.h**]( http://github.com/me-no-dev/ESPAsyncWebServer "Asynchroner Webserver")
-- [**Timelib.h**]( http://github.com/PaulStoffregen/Time "Timelib")
+- [**Timelib.h**]( http://github.com/PaulStoffregen/Time)
 
 Bei der Time-Bibliothek kommt es unter nicht case-sensitiven Systemen (Windows, Mac) oft zu Fehlermeldungen, wenn die Bibliothek als ***T**ime.h* eingebunden wird. Zahlreiche andere Bibliotheken bringen Headerdateien in der Schreibweise ***t**ime.h* mit.  Daher ist es sinnvoll diese Bibliothek in ein Verzeichnis *Time**lib*** zu installieren und auch die direkt die *Timelib.h* einzubinden.  Die im Projekt aus Rückwärtskompatibilitätsgründen enthaltene *Time.h* macht nichts anderes!
 
-Neben den vorhandenen Arduino bzw. ESP-Standardbibliotheken werden folgende Bibliotheken aus Github-Repositories ohne Veränderung verwendet:
+Neben den vorhandenen Arduino bzw. ESP-Standardbibliotheken werden folgende Bibliotheken aus Github-Repositories ohne Veränderung verwendet. Diese können entweder per "git clone" in das lokale Bibliotheksverzeichnis installiert werden, oder aber als ZIP-Datei heruntergeladen werden und dann [als ZIPFILE installiert werden ](https://www.arduino.cc/en/Guide/Libraries#toc4) 
 
-- [**ESPAsyncUDP.h**]( http://github.com/me-no-dev/ESPAsyncUDP "Asynchrones UDP")
-- [**ESPAsyncTCP.h**]( http://github.com/me-no-dev/ESPAsyncTCP "Asynchrones TCP")
-- [**Timezone.h**]( http://github.com/JChristensen/Timezone "Timezone")
-- [**Max72xxPanel.h**]( https://github.com/markruys/arduino-Max72xxPanel.git "Max72xx Paneltreiber")
+- [**ESPAsyncUDP.h**]( http://github.com/me-no-dev/ESPAsyncUDP)
+- [**ESPAsyncTCP.h**]( http://github.com/me-no-dev/ESPAsyncTCP)
+- [**ESPAsyncWebServer.h**]( http://github.com/me-no-dev/ESPAsyncWebServer)
+- [**Timezone.h**]( http://github.com/JChristensen/Timezone)
+
+Compilieren und Laden des Programmes
+------------------------------------
+- Herunterladen des Programmcodes oder Clonen des Github-Repositories
+- Installieren der zur beschriebenen Komponenten in die Arduino IDE
+  - ESP8266 Toolchain (entweder über den Boardverwalter oder [direkt aus Github](https://arduino-esp8266.readthedocs.io/en/latest/installing.html#using-git-version)
+  - Installation des [ESP Sketch Data Upload-Tools](https://github.com/esp8266/arduino-esp8266fs-plugin)
+  - Optional: [ESP Exception Stack Decoder](https://github.com/me-no-dev/EspExceptionDecoder) 
+  - [**ESPAsyncUDP.h**]( http://github.com/me-no-dev/ESPAsyncUDP)
+  - [**ESPAsyncTCP.h**]( http://github.com/me-no-dev/ESPAsyncTCP)
+  - [**Timezone.h**]( http://github.com/JChristensen/Timezone)
+  - gepatchte Timelib ins Bibliotheksverzeichnis installieren
+
+- Öffnen der Datei 	PHABLABS-POV.ino in der Arduino IDE
+- Folgende Einstellungen für das Board vornehmen:
+  - ***Lolin (Wemos) D1 R2 & mini***
+  - Flash Size: ***4M (3M SPIFFS)***
+  - Debug Port: ***Serial***
+  - Erase Flash: ***All Flash Contents*** 
+  - COM-Port: ***aktuellen COM-Port des angesteckten WeMOS D1***
+- Programm Compilieren und auf den Controller laden
+- Inhalt des SPIFFS-Dateisystem mit dem Menüpunkt: ***Werkzeuge=> ESP8266 Sketch Data Upload*** auf den Controller laden.
+- Für ein erneutes Hochladen des Programmcodes ***Erase Flash*** wieder auf ***Only Sketch*** stellen. Somit bleiben das SPIFFS-Dateisystem und eventuell gespeicherte Konfigurationsdaten erhalten.
 
 
 Grundidee bzw. weitere Entwicklung
